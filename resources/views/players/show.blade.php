@@ -4,7 +4,7 @@
 @section('content')
 <div class="page-head"><div><div class="eyebrow">Ficha individual</div><h1>{{ $player->first_name }} {{ $player->last_name }}</h1><p class="subtitle">{{ $player->team->name }}</p></div><div class="actions"><a class="button secondary" href="{{ route('players.index') }}">Volver</a><a class="button" href="{{ route('players.edit', $player) }}">Editar jugador</a></div></div>
 <section class="card profile">
-    @if($player->photo_path)<img class="profile-photo" src="{{ Storage::disk('public')->url($player->photo_path) }}" alt="Fotografía de {{ $player->first_name }} {{ $player->last_name }}">@else<div class="profile-photo profile-placeholder">♙</div>@endif
+    @if($player->photo_path)<img class="profile-photo" src="{{ asset('storage/'.$player->photo_path) }}" alt="Fotografía de {{ $player->first_name }} {{ $player->last_name }}">@else<div class="profile-photo profile-placeholder">♙</div>@endif
     <div><div class="eyebrow">Información personal</div><div class="detail-grid">
         <div><div class="detail-label">Nombre completo</div><div class="detail-value">{{ $player->first_name }} {{ $player->last_name }}</div></div>
         <div><div class="detail-label">Equipo</div><div class="detail-value">{{ $player->team->name }}</div></div>

@@ -68,12 +68,14 @@ php artisan key:generate
 php artisan config:clear
 php artisan migrate
 php artisan storage:link
+php artisan db:seed --class=DemoTournamentSeeder
 ```
 
 - `composer install` instala las dependencias PHP incluidas en `composer.lock`.
 - `key:generate` crea la llave de cifrado de la aplicación.
 - `migrate` crea las tablas del torneo en la base MySQL configurada.
 - `storage:link` permite mostrar las fotografías guardadas en el almacenamiento público.
+- `db:seed --class=DemoTournamentSeeder` carga equipos, jornadas y registros ficticios para la demostración.
 
 Las migraciones agregan las tablas necesarias sin borrar tablas existentes. **No ejecutes `php artisan migrate:fresh` en una base de datos con información que quieras conservar**, porque elimina todas las tablas.
 
@@ -111,9 +113,19 @@ Sigue este orden para habilitar las funciones:
 3. En **Jugadores**, registra a cada participante y sube su fotografía.
 4. En **Goles**, captura la cantidad anotada por jugador y jornada.
 5. En **Incidencias**, registra tarjetas. Para una tarjeta roja, indica también la fecha hasta la que estará suspendido el jugador.
-6. Consulta los reportes de **Lista arbitral**, **Incidencias** y **Goleadores**, o abre la ficha individual desde Jugadores.
+6. Consulta los reportes de **Lista arbitral**, **Incidencias** y **Goleadores**. Descarga un PDF con los filtros seleccionados o usa el diálogo del navegador para imprimirlo o guardarlo como PDF.
+7. Abre la ficha individual desde Jugadores.
 
 La suspensión se cuenta desde la fecha de la incidencia hasta la fecha final, ambas inclusive. Las fotografías se almacenan en `storage/app/public/players`. No se puede borrar un equipo que tenga jugadores asociados ni una jornada que ya tenga goles.
+
+## Manuales y publicación
+
+- [Manual de usuario](./MANUAL_USUARIO.md): guía de registro, consulta e impresión de reportes.
+- [Manual técnico de Laravel y publicación](./MANUAL_TECNICO_LARAVEL.md): explica la estructura para principiantes y los pasos de despliegue.
+- Ejecuta `php scripts/generate-documentation-pdf.php` para crear o actualizar `DOCUMENTACION_PROYECTO.pdf` después de completar la reflexión del equipo en el manual técnico.
+- [Documento de entrega en PDF](./DOCUMENTACION_PROYECTO.pdf): contiene ambos manuales y la sección de reflexión para completar.
+
+**Importante:** la aplicación no tiene inicio de sesión ni control de acceso. Usa exclusivamente datos ficticios en una instancia pública y sigue las recomendaciones de protección de datos del manual técnico; no cargues información ni fotografías reales de menores.
 
 ## Pruebas automatizadas
 
@@ -126,6 +138,8 @@ php artisan test
 Las pruebas usan SQLite en memoria (configurado en `phpunit.xml`), por lo que no requieren MySQL y no modifican la base de datos del torneo. Comprueban las pantallas principales, registro de jugadores, goles e incidencias, unicidad de goles por jornada y cálculo de suspensiones en la lista arbitral.
 
 Si falta la extensión SQLite en PHP, habilita `pdo_sqlite` en `C:\xampp\php\php.ini` y reinicia la terminal.
+
+Si el PDF debe incluir fotografías y falta GD (`php -m` no muestra `gd`), habilita `extension=gd` en `C:\xampp\php\php.ini`, guarda el archivo y reinicia la terminal y Apache.
 
 ## Solución de problemas
 

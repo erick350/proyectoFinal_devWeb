@@ -7,8 +7,11 @@ use App\Models\Incident;
 use App\Models\Matchday;
 use App\Models\Player;
 use App\Models\Team;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -244,6 +247,22 @@ class TournamentController extends Controller
 
     public function refereeReport(Request $request): View
     {
+        return view('reports.referee', $this->refereeReportData($request));
+    }
+
+    public function downloadRefereeReport(Request $request): Response
+    {
+        $data = $this->refereeReportData($request);
+        $matchday = $data['selectedMatchday'];
+        $filename = 'lista-arbitral'.($matchday ? '-jornada-'.$matchday->number : '').'.pdf';
+
+        return Pdf::loadView('reports.pdf.referee', $data)
+            ->setPaper('a4', 'landscape')
+            ->download($filename);
+    }
+
+    private function refereeReportData(Request $request): array
+    {
         $matchday = $request->filled('matchday_id') ? Matchday::findOrFail($request->integer('matchday_id')) : null;
         $players = Player::with('team')->when($request->filled('team_id'), fn ($query) => $query->where('team_id', $request->integer('team_id')))
             ->orderBy('team_id')->orderBy('last_name')->get();
@@ -255,17 +274,29 @@ class TournamentController extends Controller
                 ->pluck('player_id')->unique()->all()
             : [];
 
-        return view('reports.referee', [
+        return [
             'players' => $players,
             'teams' => Team::orderBy('name')->get(),
             'matchdays' => Matchday::orderBy('number')->get(),
             'selectedMatchday' => $matchday,
             'suspendedIds' => $suspendedIds,
             'selectedTeam' => $request->input('team_id'),
-        ]);
+        ];
     }
 
     public function incidentReport(Request $request): View
+    {
+        return view('reports.incidents', $this->incidentReportData($request));
+    }
+
+    public function downloadIncidentReport(Request $request): Response
+    {
+        return Pdf::loadView('reports.pdf.incidents', $this->incidentReportData($request))
+            ->setPaper('a4', 'landscape')
+            ->download('reporte-incidencias.pdf');
+    }
+
+    private function incidentReportData(Request $request): array
     {
         $incidents = Incident::with('player.team')
             ->when($request->filled('team_id'), fn ($query) => $query->whereHas('player', fn ($players) => $players->where('team_id', $request->integer('team_id'))))
@@ -273,18 +304,31 @@ class TournamentController extends Controller
             ->when($request->filled('card_type'), fn ($query) => $query->where('card_type', $request->input('card_type')))
             ->latest('incident_date')->get();
 
-        return view('reports.incidents', [
+        return [
             'incidents' => $incidents,
             'teams' => Team::orderBy('name')->get(),
             'players' => Player::orderBy('last_name')->get(),
-        ]);
+            'selectedTeam' => $request->input('team_id'),
+            'selectedPlayer' => $request->input('player_id'),
+            'selectedCardType' => $request->input('card_type'),
+        ];
     }
 
     public function scorersReport(): View
     {
-        return view('reports.scorers', [
-            'players' => Player::with('team')->whereHas('goals')->withSum('goals', 'quantity')
-                ->orderByDesc('goals_sum_quantity')->orderBy('last_name')->get(),
-        ]);
+        return view('reports.scorers', ['players' => $this->scorersReportData()]);
+    }
+
+    public function downloadScorersReport(): Response
+    {
+        return Pdf::loadView('reports.pdf.scorers', ['players' => $this->scorersReportData()])
+            ->setPaper('a4', 'landscape')
+            ->download('tabla-de-goleadores.pdf');
+    }
+
+    private function scorersReportData(): Collection
+    {
+        return Player::with('team')->whereHas('goals')->withSum('goals', 'quantity')
+            ->orderByDesc('goals_sum_quantity')->orderBy('last_name')->get();
     }
 }

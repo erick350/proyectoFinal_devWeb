@@ -29,5 +29,8 @@ Route::post('/incidencias', [TournamentController::class, 'storeIncident'])->nam
 Route::delete('/incidencias/{incident}', [TournamentController::class, 'destroyIncident'])->name('incidents.destroy');
 
 Route::get('/reportes/arbitro', [TournamentController::class, 'refereeReport'])->name('reports.referee');
+Route::get('/reportes/arbitro/pdf', [TournamentController::class, 'downloadRefereeReport'])->name('reports.referee.pdf');
 Route::get('/reportes/incidencias', [TournamentController::class, 'incidentReport'])->name('reports.incidents');
+Route::get('/reportes/incidencias/pdf', [TournamentController::class, 'downloadIncidentReport'])->name('reports.incidents.pdf');
 Route::get('/reportes/goleadores', [TournamentController::class, 'scorersReport'])->name('reports.scorers');
+Route::get('/reportes/goleadores/pdf', [TournamentController::class, 'downloadScorersReport'])->name('reports.scorers.pdf');

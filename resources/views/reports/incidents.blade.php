@@ -2,7 +2,7 @@
 @section('title', 'Reporte de incidencias')
 @section('section', 'Reporte incidencias')
 @section('content')
-<div class="page-head"><div><div class="eyebrow">Reportes del torneo</div><h1>Incidencias de jugadores</h1><p class="subtitle">Consulta las tarjetas registradas por equipo, jugador o tipo.</p></div><button class="button secondary" onclick="window.print()">Imprimir reporte</button></div>
+<div class="page-head"><div><div class="eyebrow">Reportes del torneo</div><h1>Incidencias de jugadores</h1><p class="subtitle">Consulta las tarjetas registradas por equipo, jugador o tipo.</p></div><div class="actions"><a class="button secondary" href="{{ route('reports.incidents.pdf', request()->query()) }}">Descargar PDF</a><button class="button secondary" onclick="window.print()">Imprimir</button></div></div>
 <section class="card">
     <form class="filter" method="GET" action="{{ route('reports.incidents') }}">
         <div class="field"><label for="team_id">Equipo</label><select id="team_id" name="team_id"><option value="">Todos</option>@foreach($teams as $team)<option value="{{ $team->id }}" @selected(request('team_id') == $team->id)>{{ $team->name }}</option>@endforeach</select></div>
@@ -16,4 +16,5 @@
     @foreach($incidents as $incident)<tr><td>{{ $incident->incident_date->format('d/m/Y') }}</td><td><a href="{{ route('players.show', $incident->player) }}">{{ $incident->player->first_name }} {{ $incident->player->last_name }}</a></td><td>{{ $incident->player->team->name }}</td><td><span class="badge {{ $incident->card_type === 'roja' ? 'red' : 'yellow' }}">{{ ucfirst($incident->card_type) }}</span></td><td>{{ $incident->description }}</td><td>{{ $incident->suspension_until?->format('d/m/Y') ?? '—' }}</td></tr>@endforeach
     </tbody></table></div>@endif
 </section>
+<style>@media print{.sidebar,.topbar,.page-head .actions,.filter{display:none!important}.main{margin:0}.content{padding:0}.card{border:0}}</style>
 @endsection

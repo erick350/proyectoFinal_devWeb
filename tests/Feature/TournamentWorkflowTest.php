@@ -7,7 +7,9 @@ use App\Models\Incident;
 use App\Models\Matchday;
 use App\Models\Player;
 use App\Models\Team;
+use Database\Seeders\DemoTournamentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 class TournamentWorkflowTest extends TestCase
@@ -63,6 +65,35 @@ class TournamentWorkflowTest extends TestCase
         $this->get(route('reports.scorers'))->assertOk()->assertSee('Halcones')->assertSee('2');
     }
 
+    public function test_player_photo_url_uses_the_public_path_and_supports_application_subdirectories(): void
+    {
+        $team = Team::create(['name' => 'Halcones']);
+        $player = Player::create([
+            'team_id' => $team->id,
+            'first_name' => 'Ana',
+            'last_name' => 'López',
+            'birth_date' => '2015-04-20',
+            'photo_path' => 'players/foto.png',
+        ]);
+        $rootUrl = URL::to('/');
+        $photoPath = 'storage/players/foto.png';
+
+        try {
+            $this->get("/jugadores/{$player->id}")
+                ->assertOk()
+                ->assertSee(asset($photoPath), false);
+
+            URL::forceRootUrl('http://localhost/proyectoFinal_devWeb/public');
+
+            $this->assertSame(
+                'http://localhost/proyectoFinal_devWeb/public/storage/players/foto.png',
+                asset($photoPath)
+            );
+        } finally {
+            URL::forceRootUrl($rootUrl);
+        }
+    }
+
     public function test_referee_report_marks_players_suspended_for_the_matchday_date(): void
     {
         $team = Team::create(['name' => 'Halcones']);
@@ -83,6 +114,57 @@ class TournamentWorkflowTest extends TestCase
             ->assertSee('Suspendido')
             ->assertSee('Luis Ruiz')
             ->assertSee('Habilitado');
+    }
+
+    public function test_reports_can_be_downloaded_as_pdf_with_the_selected_filters(): void
+    {
+        $team = Team::create(['name' => 'Halcones']);
+        $player = Player::create([
+            'team_id' => $team->id,
+            'first_name' => 'Ana',
+            'last_name' => 'López',
+            'birth_date' => '2015-04-20',
+        ]);
+        $matchday = Matchday::create(['number' => 1, 'game_date' => '2026-10-10']);
+        Goal::create(['player_id' => $player->id, 'matchday_id' => $matchday->id, 'quantity' => 2]);
+        Incident::create([
+            'player_id' => $player->id,
+            'description' => 'Falta de demostración',
+            'card_type' => 'amarilla',
+            'incident_date' => '2026-10-10',
+        ]);
+
+        foreach ([
+            route('reports.referee.pdf', ['matchday_id' => $matchday->id, 'team_id' => $team->id]),
+            route('reports.incidents.pdf', ['team_id' => $team->id, 'player_id' => $player->id, 'card_type' => 'amarilla']),
+            route('reports.scorers.pdf'),
+        ] as $url) {
+            $response = $this->get($url);
+
+            $response->assertOk()
+                ->assertHeader('content-type', 'application/pdf')
+                ->assertHeader('content-disposition');
+            $this->assertStringStartsWith('%PDF-', $response->getContent());
+        }
+    }
+
+    public function test_demo_seeder_creates_fictional_tournament_data_without_duplicates(): void
+    {
+        $this->seed(DemoTournamentSeeder::class);
+
+        $this->assertDatabaseCount('teams', 4);
+        $this->assertDatabaseCount('matchdays', 3);
+        $this->assertDatabaseCount('players', 8);
+        $this->assertDatabaseCount('goals', 8);
+        $this->assertDatabaseCount('incidents', 2);
+
+        $this->seed(DemoTournamentSeeder::class);
+
+        $this->assertDatabaseCount('teams', 4);
+        $this->assertDatabaseCount('matchdays', 3);
+        $this->assertDatabaseCount('players', 8);
+        $this->assertDatabaseCount('goals', 8);
+        $this->assertDatabaseCount('incidents', 2);
     }
 
     public function test_player_can_only_have_one_goal_record_per_matchday(): void
